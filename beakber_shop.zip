@@ -1,0 +1,150 @@
+from zipfile import ZipFile
+
+# HTML 콘텐츠 정의
+html_content = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Beak Ber 쇼핑몰</title>
+  <style>
+    body { font-family: sans-serif; margin: 40px; }
+    h1 { color: #333; }
+    .product { border: 1px solid #ccc; padding: 10px; margin: 10px 0; }
+    .cart { border-top: 2px solid #000; margin-top: 30px; padding-top: 20px; }
+    button { margin: 5px; }
+  </style>
+</head>
+<body>
+
+  <h1>🛍️ Beak Ber 쇼핑몰</h1>
+
+  <div id="product-list"></div>
+
+  <div class="cart">
+    <h2>🛒 장바구니</h2>
+    <ul id="cart-items"></ul>
+    <input type="text" id="username" placeholder="이름을 입력하세요" />
+    <button onclick="placeOrder()">주문하기</button>
+  </div>
+
+  <div>
+    <h2>📦 주문 기록</h2>
+    <ul id="order-history"></ul>
+  </div>
+
+  <script>
+    const products = [
+      { id: 1, name: "베이직 티셔츠", price: 10000 },
+      { id: 2, name: "청바지", price: 30000 },
+      { id: 3, name: "스니커즈", price: 50000 },
+      { id: 4, name: "백팩", price: 45000 },
+      { id: 5, name: "후드티", price: 25000 },
+      { id: 6, name: "모자", price: 15000 },
+      { id: 7, name: "양말 세트", price: 8000 },
+      { id: 8, name: "자켓", price: 60000 },
+      { id: 9, name: "셔츠", price: 20000 },
+      { id: 10, name: "지갑", price: 35000 }
+    ];
+
+    const cart = [];
+
+    function renderProducts() {
+      const list = document.getElementById("product-list");
+      list.innerHTML = "";
+      products.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "product";
+        div.innerHTML = \`
+          <strong>\${p.name}</strong> - \${p.price.toLocaleString()}원
+          <br/>
+          <button onclick="addToCart(\${p.id})">장바구니에 담기</button>
+          <button onclick="removeFromCart(\${p.id})">빼기</button>
+        \`;
+        list.appendChild(div);
+      });
+    }
+
+    function renderCart() {
+      const ul = document.getElementById("cart-items");
+      ul.innerHTML = "";
+      cart.forEach(item => {
+        const product = products.find(p => p.id === item);
+        const li = document.createElement("li");
+        li.textContent = \`\${product.name} - \${product.price.toLocaleString()}원\`;
+        ul.appendChild(li);
+      });
+    }
+
+    function addToCart(id) {
+      cart.push(id);
+      renderCart();
+    }
+
+    function removeFromCart(id) {
+      const index = cart.indexOf(id);
+      if (index !== -1) {
+        cart.splice(index, 1);
+        renderCart();
+      }
+    }
+
+    function placeOrder() {
+      const username = document.getElementById("username").value.trim();
+      if (!username) {
+        alert("이름을 입력해주세요.");
+        return;
+      }
+
+      if (cart.length === 0) {
+        alert("장바구니가 비어있습니다.");
+        return;
+      }
+
+      const order = {
+        username,
+        items: [...cart],
+        time: new Date().toLocaleString()
+      };
+
+      const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+      orders.push(order);
+      localStorage.setItem("orders", JSON.stringify(orders));
+
+      alert(\`\${username}님의 주문이 완료되었습니다!\`);
+      cart.length = 0;
+      renderCart();
+      document.getElementById("username").value = "";
+      renderOrders();
+    }
+
+    function renderOrders() {
+      const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+      const list = document.getElementById("order-history");
+      list.innerHTML = "";
+      orders.forEach(o => {
+        const li = document.createElement("li");
+        const names = o.items.map(id => {
+          const p = products.find(p => p.id === id);
+          return p?.name || "알 수 없음";
+        }).join(", ");
+        li.textContent = \`\${o.username}님이 주문한 상품: \${names} (\${o.time})\`;
+        list.appendChild(li);
+      });
+    }
+
+    renderProducts();
+    renderCart();
+    renderOrders();
+  </script>
+
+</body>
+</html>
+"""
+
+# index.html 파일 생성
+with open("index.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+# ZIP 압축
+with ZipFile("beakber_shop.zip", "w") as zipf:
+    zipf.write("index.html")
